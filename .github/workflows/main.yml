@@ -31,3 +31,11 @@ jobs:
       - name: Run java to print os.arch
         run: |
           java PrintArch.java
+
+
+      - name: native-image
+        if: ${{ matrix.distribution }} == 'graalvm'
+        run: |
+          javac PrintArch.java
+          native-image PrintArch
+          ./printarch
