@@ -13,6 +13,7 @@ jobs:
     strategy:
       matrix:
         java: [21, 24, 25]  # OpenJDK versions
+        distribution: [oracle, graalvm]
 
     steps:
       - name: Checkout repository
@@ -21,7 +22,7 @@ jobs:
       - name: Set up JDK ${{ matrix.java }}
         uses: actions/setup-java@v4
         with:
-          distribution: graalvm
+          distribution: ${{ matrix.distribution }}
           java-version: ${{ matrix.java }}
 
       - name: Print Java version
