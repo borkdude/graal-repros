@@ -27,9 +27,6 @@ jobs:
       - name: Print Java version
         run: java -version
 
-      - name: Run Clojure to print os.arch
+      - name: Run java to print os.arch
         run: |
-          cat <<'EOF' > PrintArch.clj
-          (println (System/getProperty "os.arch"))
-          EOF
-          clojure PrintArch.clj
+          java PrintArch.java
