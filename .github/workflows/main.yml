@@ -34,7 +34,7 @@ jobs:
 
 
       - name: native-image
-        if: ${{ matrix.distribution }} == 'graalvm'
+        if: matrix.distribution == 'graalvm'
         run: |
           javac PrintArch.java
           native-image PrintArch
