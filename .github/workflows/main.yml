@@ -9,6 +9,11 @@ jobs:
   repro:
     runs-on: [ windows-2022 ]
 
+    defaults:
+      run:
+        shell: pwsh   # use PowerShell Core (recommended)
+        # or: powershell   # if you want Windows PowerShell 5.1
+
     strategy:
       matrix:
         java: [25]  # OpenJDK versions
