@@ -15,9 +15,9 @@ public class Repro {
     public static void main(String [] args) {
         System.out.println(System.getProperty("file.encoding"));
         System.out.println(out.getEncoding());
-        System.out.println("λ");
+        System.out.println("λ⚙️中文");
         assignOutputWriter();
         System.out.println(out.getEncoding());
-        System.out.println("λ");
+        System.out.println("λ⚙️中文");
     }
 }
