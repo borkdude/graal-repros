@@ -42,7 +42,7 @@ jobs:
         if: matrix.distribution == 'graalvm'
         run: |
           javac Repro.java
-          native-image Repro --initialize-at-build-time=Repro
+          native-image Repro --initialize-at-build-time=Repro --verbose
 
       - name: run native-image
         if: matrix.distribution == 'graalvm'
