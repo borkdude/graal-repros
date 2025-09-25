@@ -27,10 +27,9 @@ jobs:
       - name: Print Java version
         run: java -version
 
-      - name: Run java to print os.arch
+      - name: Run in java
         run: |
-          java PrintArch.java
-
+          java Repro.java
 
       - name: native-image
         if: matrix.distribution == 'graalvm'
