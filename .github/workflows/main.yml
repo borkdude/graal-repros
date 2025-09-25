@@ -30,7 +30,7 @@ jobs:
 
       - name: Run java to print os.arch
         run: |
-          java PrintArch.java
+          java Repro.java
 
 
       - name: native-image
