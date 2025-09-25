@@ -48,3 +48,10 @@ jobs:
         if: matrix.distribution == 'graalvm'
         run: |
           ./repro
+
+      - name: Upload repro.exe
+        if: matrix.distribution == 'graalvm'
+        uses: actions/upload-artifact@v4
+        with:
+          name: repro-exe
+          path: repro.exe
