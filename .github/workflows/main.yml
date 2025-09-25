@@ -8,11 +8,11 @@ on:
 
 jobs:
   check-os-arch:
-    runs-on: macos-13  # This is macOS Intel; macos-14 is Apple Silicon
+    runs-on: [ windows-2022 ]
 
     strategy:
       matrix:
-        java: [21, 24, 25]  # OpenJDK versions
+        java: [25]  # OpenJDK versions
         distribution: [oracle, graalvm]
 
     steps:
