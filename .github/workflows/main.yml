@@ -12,7 +12,7 @@ jobs:
     strategy:
       matrix:
         java: [25]  # OpenJDK versions
-        distribution: [oracle, graalvm]
+        distribution: [graalvm]
 
     steps:
       - name: Checkout repository
