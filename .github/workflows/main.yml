@@ -29,8 +29,10 @@ jobs:
           distribution: ${{ matrix.distribution }}
           java-version: ${{ matrix.java }}
 
-      - name: Print Java version
-        run: java -version
+      - name: Print versions
+        run: |
+          java -version
+          $PSVersionTable.PSVersion
 
       - name: Run in java
         run: |
