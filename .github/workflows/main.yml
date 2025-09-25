@@ -1,4 +1,4 @@
-name: Check os.arch on macOS Intel
+name: Graal repro
 
 on:
   workflow_dispatch:
@@ -36,6 +36,6 @@ jobs:
       - name: native-image
         if: matrix.distribution == 'graalvm'
         run: |
-          javac PrintArch.java
-          native-image PrintArch
-          ./printarch
+          javac Repro.java
+          native-image Repro
+          ./repro
