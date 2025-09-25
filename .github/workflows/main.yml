@@ -6,7 +6,7 @@ on:
   pull_request:
 
 jobs:
-  check-os-arch:
+  repro:
     runs-on: [ windows-2022 ]
 
     strategy:
