@@ -66,6 +66,10 @@ jobs:
         if: matrix.distribution == 'graalvm'
         run: |
           ./repro
+          ./repro -Djava.file.encoding=UTF-8
+          $OutputEncoding = [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new()
+          ./repro
+          ./repro -Djava.file.encoding=UTF-8
 
       - name: Upload repro.exe
         if: matrix.distribution == 'graalvm'
