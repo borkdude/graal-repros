@@ -49,7 +49,7 @@ jobs:
           java -jar target/repro-1.0.0-standalone.jar
 
       - name: Native-image compile
-      - run: |
+        run: |
           native-image -jar target/repro-1.0.0-standalone.jar --initialize-at-build-time=clojure,my -o repro
 
       # - name: Run in java
