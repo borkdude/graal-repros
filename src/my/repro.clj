@@ -3,6 +3,8 @@
 
 (set! *warn-on-reflection* true)
 
+(alter-var-root #'*out* (constantly (java.io.OutputStreamWriter. System/out)))
+
 (defn -main [& _args]
   (prn (System/getProperty "java.file.encoding"))
   (prn (.getEncoding ^java.io.OutputStreamWriter *out*))
