@@ -34,15 +34,33 @@ jobs:
           java -version
           $PSVersionTable.PSVersion
 
-      - name: Run in java
-        run: |
-          java Repro.java
+      - name: Install clojure tools
+        uses: DeLaGuardo/setup-clojure@13.4
+        with:
+          # Install just one or all simultaneously
+          # The value must indicate a particular version of the tool, or use 'latest'
+          # to always provision the latest version
+          cli: latest
+          bb: latest
 
-      - name: native-image
-        if: matrix.distribution == 'graalvm'
-        run: |
-          javac Repro.java
-          native-image Repro --initialize-at-build-time=Repro --verbose
+      - name: Run in Clojure
+      - run: |
+          clojure -T:build uber
+          java -jar target/repro-1.0.0-standalone.jar
+
+      - name: Native-image compile
+      - run: |
+          native-image -jar target/repro-1.0.0-standalone.jar --initialize-at-build-time=clojure,my -o repro
+
+      # - name: Run in java
+      #   run: |
+      #     java Repro.java
+
+      # - name: native-image
+      #   if: matrix.distribution == 'graalvm'
+      #   run: |
+      #     javac Repro.java
+      #     native-image Repro --initialize-at-build-time=Repro --verbose
 
       - name: run native-image
         if: matrix.distribution == 'graalvm'
