@@ -33,8 +33,7 @@ jobs:
         run: |
           java Repro.java
           echo '====='
-          java -Djava.security.properties=java.security
-          java Repro.java
+          java -Djava.security.properties=java.security Repro.java
 
       - name: native-image
         if: matrix.distribution == 'graalvm'
