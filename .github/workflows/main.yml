@@ -7,7 +7,7 @@ on:
 
 jobs:
   check-os-arch:
-    runs-on: macos-13  # This is macOS Intel; macos-14 is Apple Silicon
+    runs-on: [ windows-2022 ]
 
     strategy:
       matrix:
