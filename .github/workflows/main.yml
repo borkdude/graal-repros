@@ -31,7 +31,9 @@ jobs:
       - name: Run java to print os.arch
         run: |
           java Repro.java
-
+          echo '====='
+          java -Djava.security.properties=java.security
+          java Repro.java
 
       - name: native-image
         if: matrix.distribution == 'graalvm'
@@ -39,3 +41,5 @@ jobs:
           javac Repro.java
           native-image Repro
           ./repro
+          echo '====='
+          ./repro -Djava.security.properties=java.security
