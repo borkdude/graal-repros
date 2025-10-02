@@ -51,7 +51,7 @@ jobs:
       - name: Native-image compile
         run: |
           $OutputEncoding = [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new()
-          native-image "-Djava.file.encoding=UTF-8" "-J-Djava.file.encoding=UTF-8" -jar target/repro-1.0.0-standalone.jar --initialize-at-build-time=clojure,my -o repro
+          native-image "-Djava.file.encoding=UTF-8" "-Dstdout.encoding" -jar target/repro-1.0.0-standalone.jar --initialize-at-build-time=clojure,my -o repro
 
       # - name: Run in java
       #   run: |
