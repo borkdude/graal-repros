@@ -33,7 +33,7 @@ jobs:
         run: |
           java Repro.java
           echo '====='
-          java -Djava.security.properties=java.security Repro.java
+          java "-Djava.security.properties=java.security" Repro.java
 
       - name: native-image
         if: matrix.distribution == 'graalvm'
@@ -42,4 +42,4 @@ jobs:
           native-image "--initialize-at-run-time=sun.security.ssl.SSLContextImpl,sun.security.ssl.SSLAlgorithmConstraints" Repro
           ./repro
           echo '====='
-          ./repro -Djava.security.properties=java.security
+          ./repro "-Djava.security.properties=java.security"
