@@ -1,4 +1,6 @@
-{:deps {org.clojure/clojure {:mvn/version "1.13.0-master-SNAPSHOT"}}
+{:deps {org.clojure/clojure {:mvn/version
+                             "1.12.3"
+                             #_"1.13.0-master-SNAPSHOT"}}
  :aliases {:build {:deps {io.github.clojure/tools.build {:git/tag "v0.10.10"
                                                          :git/sha "deedd62"}
                           slipset/deps-deploy {:mvn/version "0.2.2"}}
