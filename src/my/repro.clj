@@ -4,4 +4,4 @@
 (set! *warn-on-reflection* true)
 
 (defn -main [& _args]
-  (prn (eval '(assoc {} :foo :bar))))
+  (prn (clojure.lang.Compiler/eval '(assoc {} :foo :bar))))
