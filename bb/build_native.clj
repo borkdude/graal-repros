@@ -7,6 +7,8 @@
          "-H:Name=cream"
          "-H:+RuntimeClassLoading"
          "-H:Preserve=package=java.util"
+         "-H:Preserve=package=clojure"
+         "-H:Preserve=package=clojure.lang"
          "-H:Preserve=package=java.lang"
          "-H:Preserve=package=java.io"
          "-H:-InterpreterTraceSupport"
@@ -15,4 +17,6 @@
          "-H:ConfigurationFileDirectories=."
          "--initialize-at-run-time=com.sun.tools.javac.file.Locations"
          "--initialize-at-build-time=com.sun.tools.doclint,'com.sun.tools.javac.parser.Tokens$TokenKind','com.sun.tools.javac.parser.Tokens$Token$Tag'"
-         "com.sun.tools.javac.launcher.SourceLauncher")
+         "-H:IncludeResources=clojure/.*"
+         "-jar" "target/repro-1.0.0-standalone.jar"
+         #_"com.sun.tools.javac.launcher.SourceLauncher")
