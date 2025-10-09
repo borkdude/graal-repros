@@ -39,7 +39,7 @@ jobs:
         if: matrix.distribution == 'graalvm'
         run: |
           javac Repro.java
-          native-image "--future-defaults=all" "--initialize-at-run-time=sun.security.ssl.SSLContextImpl,sun.security.ssl.SSLAlgorithmConstraints" -Dsun.jnu.encoding=UTF-8 Repro
-          ./repro
+          native-image "--future-defaults=all" "--initialize-at-run-time=sun.security.ssl.SSLContextImpl,sun.security.ssl.SSLAlgorithmConstraints" Repro
+          ./repro "-Dsun.jnu.encoding=UTF-8"
           echo '====='
-          ./repro "-Djava.security.properties=java.security"
+          ./repro "-Dsun.jnu.encoding=UTF-8" "-Djava.security.properties=java.security"
