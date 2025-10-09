@@ -1,0 +1,86 @@
+{
+  "reflection": [
+    {
+      "type": "Repro",
+      "methods": [
+        {
+          "name": "main",
+          "parameterTypes": [
+            "java.lang.String[]"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "java.lang.Boolean",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "getBoolean",
+          "parameterTypes": [
+            "java.lang.String"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "java.lang.ClassLoader",
+      "fields": [
+        {
+          "name": "classLoaderValueMap"
+        }
+      ]
+    },
+    {
+      "type": "jdk.internal.jrtfs.JrtFileSystemProvider"
+    },
+    {
+      "type": "jdk.internal.misc.Unsafe"
+    }
+  ],
+  "resources": [
+    {
+      "glob": "META-INF/services/com.sun.source.util.Plugin"
+    },
+    {
+      "glob": "META-INF/services/java.nio.file.spi.FileSystemProvider"
+    },
+    {
+      "glob": "META-INF/services/javax.annotation.processing.Processor"
+    },
+    {
+      "glob": "com/sun/tools/javac/resources/compiler_en.properties"
+    },
+    {
+      "glob": "com/sun/tools/javac/resources/compiler_en_NL.properties"
+    },
+    {
+      "glob": "com/sun/tools/javac/resources/javac_en.properties"
+    },
+    {
+      "glob": "com/sun/tools/javac/resources/javac_en_NL.properties"
+    },
+    {
+      "module": "jdk.compiler",
+      "glob": "com/sun/tools/javac/resources/compiler_en.properties"
+    },
+    {
+      "module": "jdk.compiler",
+      "glob": "com/sun/tools/javac/resources/compiler_en_NL.properties"
+    },
+    {
+      "module": "jdk.compiler",
+      "glob": "com/sun/tools/javac/resources/javac_en.properties"
+    },
+    {
+      "module": "jdk.compiler",
+      "glob": "com/sun/tools/javac/resources/javac_en_NL.properties"
+    },
+    {
+      "bundle": "com.sun.tools.javac.resources.compiler"
+    },
+    {
+      "bundle": "com.sun.tools.javac.resources.javac"
+    }
+  ]
+}
