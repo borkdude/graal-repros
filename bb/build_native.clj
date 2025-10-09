@@ -6,7 +6,7 @@
 
 (tasks/clojure "-T:build" "uber")
 
-(p/shell (fs/file (System/getenv "GRAALVM_HOME") "bin" "java")
+#_(p/shell (fs/file (System/getenv "GRAALVM_HOME") "bin" "java")
          "-agentlib:native-image-agent=config-output-dir=." "-jar" "target/repro-1.0.0-standalone.jar")
 
 (p/shell (fs/file (System/getenv "GRAALVM_HOME") "bin" "native-image")
@@ -25,6 +25,8 @@
          "-H:Preserve=package=java.lang"
          "-H:Preserve=package=java.util"
          "-H:Preserve=package=java.io"
+         "-H:Preserve=package=java.util.concurrent"
+         "-H:Preserve=path=target/repro-1.0.0-standalone.jar"
          "-H:-InterpreterTraceSupport"
          (str "-Djava.home=" (System/getenv "GRAALVM_HOME"))
          "-H:+AllowJRTFileSystem"
