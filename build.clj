@@ -41,6 +41,9 @@
   (clean nil)
   (b/copy-dir {:src-dirs ["src" "resources"]
                :target-dir class-dir})
+  (b/javac {:src-dirs   ["src-java"]
+            :class-dir  class-dir
+            :javac-opts ["-Xlint:unchecked" "-source" "25" "-target" "25"]})
   (b/compile-clj {:basis basis
                   :src-dirs ["src"]
                   :class-dir class-dir

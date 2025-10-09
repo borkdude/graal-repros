@@ -4,4 +4,4 @@
 (set! *warn-on-reflection* true)
 
 (defn -main [& _args]
-  (prn (eval '(+ 1 2 3))))
+  (prn (eval '(assoc {} :foo :bar))))
