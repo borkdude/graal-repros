@@ -1,8 +1,10 @@
 (ns build-native
-  (:require [babashka.process :as p]
-            [babashka.fs :as fs]))
+  (:require
+   [babashka.fs :as fs]
+   [babashka.process :as p]
+   [babashka.tasks :as tasks]))
 
-(p/shell "clojure -T:build uber")
+(tasks/clojure "-T:build" "uber")
 
 (p/shell (fs/file (System/getenv "GRAALVM_HOME") "bin" "java")
          "-agentlib:native-image-agent=config-output-dir=." "-jar" "target/repro-1.0.0-standalone.jar")
