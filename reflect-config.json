@@ -2348,4 +2348,9 @@
   "allPublicMethods" : true,
   "allPublicConstructors" : true,
   "allPublicFields" : true
+}, {
+  "name" : "clojure.core$apply",
+  "allPublicMethods" : true,
+  "allPublicConstructors" : true,
+  "allPublicFields" : true
 } ]

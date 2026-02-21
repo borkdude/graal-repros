@@ -124,9 +124,9 @@ runtime is a no-op for these — no reachability issues.
 | malli | Works | Validation/schema library |
 | meander | Works | Fixed by `Class.forName` → `RT.classForName` compiler redirect |
 | selmer | Works | Fixed by `Class.forName` → `RT.classForName` compiler redirect |
-| data.xml | Fails | `javax.xml.stream` package not preserved for Crema |
-| core.async | Fails | `#=` reader macro / constructor dispatch for `clojure.core$apply` |
-| deep-diff2 | Fails | Protocol method resolution (`equality-partition`) |
+| data.xml | Works | Fixed by preserving `javax.xml.*` and `java.util.*` |
+| core.async | Works | Fixed by adding `clojure.core$apply` to reflect-config |
+| deep-diff2 | Works | Previously failed on protocol resolution, now works |
 | http-kit | Fails | Enum `values()` NPE in Crema interpreter |
 | clj-yaml | Fails | Enum support (`EnumMap` NPE in Crema) |
 | cheshire | Fails | Jackson enum `values()` NPE in Crema |
@@ -205,11 +205,9 @@ babashka's `impl/classes.clj` coverage:
 - `java.text` — `SimpleDateFormat` constructor (tools.reader, etc.)
 - `java.time`, `java.time.chrono`, `java.time.format`, `java.time.temporal`,
   `java.time.zone` — date/time
-- `java.util`, `java.util.concurrent`, `java.util.concurrent.atomic`,
-  `java.util.concurrent.locks`, `java.util.function`, `java.util.jar`,
-  `java.util.regex`, `java.util.stream`, `java.util.zip` — collections, concurrency
+- `java.util.*` — collections, concurrency, logging, regex, streams, zip/jar
 - `javax.crypto`, `javax.crypto.spec`, `javax.net.ssl` — crypto/SSL
-- `javax.xml.namespace` — XML
+- `javax.xml.*` — XML processing (stream, transform, parsers, etc.)
 
 ### URL protocols
 

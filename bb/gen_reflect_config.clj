@@ -512,7 +512,10 @@
    "clojure.lang.Sorted"
    "clojure.lang.Symbol"
    "clojure.lang.Var"
-   "clojure.lang.Volatile"])
+   "clojure.lang.Volatile"
+   ;; Compiled Clojure function classes needed by #= reader macro.
+   ;; core.async uses #=(clojure.core$apply) in compiled code.
+   "clojure.core$apply"])
 
 (defn generate []
   (let [entries (mapv (fn [class-name]
