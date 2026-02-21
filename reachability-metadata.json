@@ -1,13 +1,34 @@
 {
   "reflection": [
     {
-      "type": "boolean[]"
+      "type": "[B"
     },
     {
-      "type": "byte[]"
+      "type": "[C"
     },
     {
-      "type": "char[]"
+      "type": "[D"
+    },
+    {
+      "type": "[F"
+    },
+    {
+      "type": "[I"
+    },
+    {
+      "type": "[J"
+    },
+    {
+      "type": "[Ljava.lang.Object;"
+    },
+    {
+      "type": "[S"
+    },
+    {
+      "type": "[Z"
+    },
+    {
+      "type": "clojure.asm.ClassReader"
     },
     {
       "type": "clojure.asm.ClassVisitor"
@@ -26,15 +47,6 @@
     },
     {
       "type": "clojure.asm.commons.Method"
-    },
-    {
-      "type": "clojure.core$eval1",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
     },
     {
       "type": "clojure.core.ArrayChunk"
@@ -79,6 +91,15 @@
       "type": "clojure.core.protocols__init"
     },
     {
+      "type": "clojure.core.reducers.Cat"
+    },
+    {
+      "type": "clojure.core.reducers.CollFold"
+    },
+    {
+      "type": "clojure.core.reducers__init"
+    },
+    {
       "type": "clojure.core.server__init"
     },
     {
@@ -94,6 +115,18 @@
       "type": "clojure.core_proxy__init"
     },
     {
+      "type": "clojure.data.Diff"
+    },
+    {
+      "type": "clojure.data.EqualityPartition"
+    },
+    {
+      "type": "clojure.data__init"
+    },
+    {
+      "type": "clojure.datafy__init"
+    },
+    {
       "type": "clojure.edn__init"
     },
     {
@@ -103,7 +136,13 @@
       "type": "clojure.gvec__init"
     },
     {
+      "type": "clojure.inspector__init"
+    },
+    {
       "type": "clojure.instant__init"
+    },
+    {
+      "type": "clojure.java.browse__init"
     },
     {
       "type": "clojure.java.io.Coercions"
@@ -113,6 +152,15 @@
     },
     {
       "type": "clojure.java.io__init"
+    },
+    {
+      "type": "clojure.java.javadoc__init"
+    },
+    {
+      "type": "clojure.java.process__init"
+    },
+    {
+      "type": "clojure.java.shell__init"
     },
     {
       "type": "clojure.lang.APersistentMap$KeySeq"
@@ -143,6 +191,9 @@
     },
     {
       "type": "clojure.lang.Fn"
+    },
+    {
+      "type": "clojure.lang.IBlockingDeref"
     },
     {
       "type": "clojure.lang.IChunk"
@@ -190,6 +241,9 @@
       "type": "clojure.lang.IReduceInit"
     },
     {
+      "type": "clojure.lang.IRef"
+    },
+    {
       "type": "clojure.lang.ISeq"
     },
     {
@@ -218,6 +272,9 @@
     },
     {
       "type": "clojure.lang.PersistentHashSet"
+    },
+    {
+      "type": "clojure.lang.PersistentQueue"
     },
     {
       "type": "clojure.lang.PersistentVector"
@@ -262,6 +319,72 @@
       "type": "clojure.main__init"
     },
     {
+      "type": "clojure.math__init"
+    },
+    {
+      "type": "clojure.pprint.PrettyFlush"
+    },
+    {
+      "type": "clojure.pprint.cl_format__init"
+    },
+    {
+      "type": "clojure.pprint.column_writer__init"
+    },
+    {
+      "type": "clojure.pprint.dispatch__init"
+    },
+    {
+      "type": "clojure.pprint.pprint_base__init"
+    },
+    {
+      "type": "clojure.pprint.pretty_writer__init"
+    },
+    {
+      "type": "clojure.pprint.print_table__init"
+    },
+    {
+      "type": "clojure.pprint.utilities__init"
+    },
+    {
+      "type": "clojure.pprint__init"
+    },
+    {
+      "type": "clojure.reflect.AsmReflector"
+    },
+    {
+      "type": "clojure.reflect.ClassResolver"
+    },
+    {
+      "type": "clojure.reflect.Constructor"
+    },
+    {
+      "type": "clojure.reflect.Field"
+    },
+    {
+      "type": "clojure.reflect.JavaReflector"
+    },
+    {
+      "type": "clojure.reflect.Method"
+    },
+    {
+      "type": "clojure.reflect.Reflector"
+    },
+    {
+      "type": "clojure.reflect.TypeReference"
+    },
+    {
+      "type": "clojure.reflect.java__init"
+    },
+    {
+      "type": "clojure.reflect__init"
+    },
+    {
+      "type": "clojure.repl__init"
+    },
+    {
+      "type": "clojure.set__init"
+    },
+    {
       "type": "clojure.spec.alpha.Spec"
     },
     {
@@ -274,7 +397,16 @@
       "type": "clojure.spec.gen.alpha__init"
     },
     {
+      "type": "clojure.stacktrace__init"
+    },
+    {
       "type": "clojure.string__init"
+    },
+    {
+      "type": "clojure.template__init"
+    },
+    {
+      "type": "clojure.test__init"
     },
     {
       "type": "clojure.uuid__init"
@@ -283,13 +415,19 @@
       "type": "clojure.walk__init"
     },
     {
-      "type": "double[]"
+      "type": "clojure.xml__init"
     },
     {
-      "type": "float[]"
+      "type": "clojure.zip__init"
     },
     {
-      "type": "int[]"
+      "type": "java.awt.BorderLayout"
+    },
+    {
+      "type": "java.awt.event.ActionEvent"
+    },
+    {
+      "type": "java.awt.event.ActionListener"
     },
     {
       "type": "java.io.BufferedInputStream"
@@ -334,6 +472,9 @@
       "type": "java.io.InputStreamReader"
     },
     {
+      "type": "java.io.LineNumberReader"
+    },
+    {
       "type": "java.io.NotSerializableException"
     },
     {
@@ -358,6 +499,9 @@
       "type": "java.io.StringReader"
     },
     {
+      "type": "java.io.StringWriter"
+    },
+    {
       "type": "java.io.Writer"
     },
     {
@@ -370,10 +514,16 @@
       "type": "java.lang.Class"
     },
     {
+      "type": "java.lang.ClassLoader"
+    },
+    {
       "type": "java.lang.Double"
     },
     {
       "type": "java.lang.Float"
+    },
+    {
+      "type": "java.lang.Integer"
     },
     {
       "type": "java.lang.Iterable"
@@ -388,7 +538,13 @@
       "type": "java.lang.Object"
     },
     {
-      "type": "java.lang.Object[]"
+      "type": "java.lang.Process"
+    },
+    {
+      "type": "java.lang.ProcessBuilder"
+    },
+    {
+      "type": "java.lang.ProcessBuilder$Redirect"
     },
     {
       "type": "java.lang.StackTraceElement"
@@ -457,6 +613,9 @@
       "type": "java.net.URLEncoder"
     },
     {
+      "type": "java.nio.charset.Charset"
+    },
+    {
       "type": "java.nio.file.Files"
     },
     {
@@ -508,7 +667,16 @@
       "type": "java.util.concurrent.BlockingQueue"
     },
     {
+      "type": "java.util.concurrent.ExecutorService"
+    },
+    {
+      "type": "java.util.concurrent.Executors"
+    },
+    {
       "type": "java.util.concurrent.LinkedBlockingQueue"
+    },
+    {
+      "type": "java.util.concurrent.ThreadFactory"
     },
     {
       "type": "java.util.concurrent.locks.ReentrantLock"
@@ -520,19 +688,58 @@
       "type": "java.util.regex.Pattern"
     },
     {
-      "type": "long[]"
+      "type": "javax.swing.JButton"
+    },
+    {
+      "type": "javax.swing.JFrame"
+    },
+    {
+      "type": "javax.swing.JPanel"
+    },
+    {
+      "type": "javax.swing.JScrollPane"
+    },
+    {
+      "type": "javax.swing.JTable"
+    },
+    {
+      "type": "javax.swing.JToolBar"
+    },
+    {
+      "type": "javax.swing.JTree"
+    },
+    {
+      "type": "javax.swing.SwingUtilities"
+    },
+    {
+      "type": "javax.swing.table.AbstractTableModel"
+    },
+    {
+      "type": "javax.swing.table.TableModel"
+    },
+    {
+      "type": "javax.swing.tree.TreeModel"
+    },
+    {
+      "type": "javax.xml.parsers.SAXParser"
+    },
+    {
+      "type": "javax.xml.parsers.SAXParserFactory"
+    },
+    {
+      "type": "my.JarClassLoader"
     },
     {
       "type": "my.repro__init"
     },
     {
-      "type": "short[]"
+      "type": "org.xml.sax.Attributes"
     },
     {
-      "type": "sun.text.resources.cldr.FormatData"
+      "type": "org.xml.sax.ContentHandler"
     },
     {
-      "type": "sun.text.resources.cldr.FormatData_en"
+      "type": "org.xml.sax.SAXException"
     }
   ],
   "resources": [
@@ -544,6 +751,12 @@
     },
     {
       "glob": "clojure/core/protocols__init.class"
+    },
+    {
+      "glob": "clojure/core/reducers.clj"
+    },
+    {
+      "glob": "clojure/core/reducers__init.class"
     },
     {
       "glob": "clojure/core/server.clj"
@@ -573,6 +786,18 @@
       "glob": "clojure/core_proxy__init.class"
     },
     {
+      "glob": "clojure/data.clj"
+    },
+    {
+      "glob": "clojure/data__init.class"
+    },
+    {
+      "glob": "clojure/datafy.clj"
+    },
+    {
+      "glob": "clojure/datafy__init.class"
+    },
+    {
       "glob": "clojure/edn.clj"
     },
     {
@@ -591,10 +816,22 @@
       "glob": "clojure/gvec__init.class"
     },
     {
+      "glob": "clojure/inspector.clj"
+    },
+    {
+      "glob": "clojure/inspector__init.class"
+    },
+    {
       "glob": "clojure/instant.clj"
     },
     {
       "glob": "clojure/instant__init.class"
+    },
+    {
+      "glob": "clojure/java/browse.clj"
+    },
+    {
+      "glob": "clojure/java/browse__init.class"
     },
     {
       "glob": "clojure/java/io.clj"
@@ -603,10 +840,106 @@
       "glob": "clojure/java/io__init.class"
     },
     {
+      "glob": "clojure/java/javadoc.clj"
+    },
+    {
+      "glob": "clojure/java/javadoc__init.class"
+    },
+    {
+      "glob": "clojure/java/process.clj"
+    },
+    {
+      "glob": "clojure/java/process__init.class"
+    },
+    {
+      "glob": "clojure/java/shell.clj"
+    },
+    {
+      "glob": "clojure/java/shell__init.class"
+    },
+    {
       "glob": "clojure/main.clj"
     },
     {
       "glob": "clojure/main__init.class"
+    },
+    {
+      "glob": "clojure/math.clj"
+    },
+    {
+      "glob": "clojure/math__init.class"
+    },
+    {
+      "glob": "clojure/pprint.clj"
+    },
+    {
+      "glob": "clojure/pprint/cl_format.clj"
+    },
+    {
+      "glob": "clojure/pprint/cl_format__init.class"
+    },
+    {
+      "glob": "clojure/pprint/column_writer.clj"
+    },
+    {
+      "glob": "clojure/pprint/column_writer__init.class"
+    },
+    {
+      "glob": "clojure/pprint/dispatch.clj"
+    },
+    {
+      "glob": "clojure/pprint/dispatch__init.class"
+    },
+    {
+      "glob": "clojure/pprint/pprint_base.clj"
+    },
+    {
+      "glob": "clojure/pprint/pprint_base__init.class"
+    },
+    {
+      "glob": "clojure/pprint/pretty_writer.clj"
+    },
+    {
+      "glob": "clojure/pprint/pretty_writer__init.class"
+    },
+    {
+      "glob": "clojure/pprint/print_table.clj"
+    },
+    {
+      "glob": "clojure/pprint/print_table__init.class"
+    },
+    {
+      "glob": "clojure/pprint/utilities.clj"
+    },
+    {
+      "glob": "clojure/pprint/utilities__init.class"
+    },
+    {
+      "glob": "clojure/pprint__init.class"
+    },
+    {
+      "glob": "clojure/reflect.clj"
+    },
+    {
+      "glob": "clojure/reflect/java.clj"
+    },
+    {
+      "glob": "clojure/reflect/java__init.class"
+    },
+    {
+      "glob": "clojure/reflect__init.class"
+    },
+    {
+      "glob": "clojure/repl.clj"
+    },
+    {
+      "glob": "clojure/repl__init.class"
+    },
+    {
+      "glob": "clojure/set.clj"
+    },
+    {
+      "glob": "clojure/set__init.class"
     },
     {
       "glob": "clojure/spec/alpha.clj"
@@ -621,10 +954,28 @@
       "glob": "clojure/spec/gen/alpha__init.class"
     },
     {
+      "glob": "clojure/stacktrace.clj"
+    },
+    {
+      "glob": "clojure/stacktrace__init.class"
+    },
+    {
       "glob": "clojure/string.clj"
     },
     {
       "glob": "clojure/string__init.class"
+    },
+    {
+      "glob": "clojure/template.clj"
+    },
+    {
+      "glob": "clojure/template__init.class"
+    },
+    {
+      "glob": "clojure/test.clj"
+    },
+    {
+      "glob": "clojure/test__init.class"
     },
     {
       "glob": "clojure/uuid.clj"
@@ -642,6 +993,18 @@
       "glob": "clojure/walk__init.class"
     },
     {
+      "glob": "clojure/xml.clj"
+    },
+    {
+      "glob": "clojure/xml__init.class"
+    },
+    {
+      "glob": "clojure/zip.clj"
+    },
+    {
+      "glob": "clojure/zip__init.class"
+    },
+    {
       "glob": "data_readers.clj"
     },
     {
@@ -656,5 +1019,6 @@
     {
       "glob": "user.clj"
     }
-  ]
+  ],
+  "bundles": []
 }

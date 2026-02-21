@@ -17,6 +17,14 @@ public class ClojureFeature implements Feature {
     public void beforeAnalysis(BeforeAnalysisAccess access) {
         try {
             Class.forName("clojure.lang.RT");
+            // Load my.repro to trigger all build-time requires
+            Class.forName("my.repro__init");
+            // Force clojure.reflect.java__init - clojure.reflect loads it
+            // via (load "reflect/java") from source, so the __init class
+            // is never class-initialized. When analysis discovers it later,
+            // it fails because TypeReference protocol isn't visible in
+            // the parallel worker thread context. Force it here.
+            Class.forName("clojure.reflect.java__init");
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }

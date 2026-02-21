@@ -54,6 +54,13 @@ cd ~/dev/clojure && git checkout crema && mvn install -Dmaven.test.skip=true
   back to `bindRoot()` instead of throwing. Fixes "Can't change/establish root
   binding of: *warn-on-reflection* with set" for all namespaces.
 
+**`Compiler.java`**:
+- `StaticMethodExpr.emit()` redirects `Class.forName` calls to `RT.classForName`.
+  See [Class.forName and GraalVM substitutions](#classforname-and-graalvm-substitutions)
+  for the full explanation.
+- `FISupport.maybeFIMethod()` catches `UnsupportedOperationException` from
+  `Class.getRawAnnotations()` for Crema runtime-loaded classes.
+
 ## Building
 
 ```sh
@@ -113,17 +120,22 @@ runtime is a no-op for these — no reachability issues.
 | clj-commons/fs | Works | File system utilities |
 | math.combinatorics | Works | Pure Clojure |
 | flatland/useful | Works | Pure Clojure |
-| data.xml | Fails | `Class.forName(String)` not reachable |
-| core.async | Fails | `Class.forName(String)` not reachable |
-| meander | Fails | `Class.forName(String)` not reachable |
-| specter | Fails | AOT-compiled, `require.invokeStatic` not reachable |
+| specter | Works | Fixed by pre-loading `clojure.core.reducers` at build time |
+| malli | Works | Validation/schema library |
+| meander | Works | Fixed by `Class.forName` → `RT.classForName` compiler redirect |
+| selmer | Works | Fixed by `Class.forName` → `RT.classForName` compiler redirect |
+| data.xml | Fails | `javax.xml.stream` package not preserved for Crema |
+| core.async | Fails | `#=` reader macro / constructor dispatch for `clojure.core$apply` |
 | deep-diff2 | Fails | Protocol method resolution (`equality-partition`) |
 | http-kit | Fails | Enum `values()` NPE in Crema interpreter |
 | clj-yaml | Fails | Enum support (`EnumMap` NPE in Crema) |
+| cheshire | Fails | Jackson enum `values()` NPE in Crema |
 
 **Pattern**: Pure Clojure libraries work. Libraries using Java interop work
-when the relevant packages are preserved. Libraries using enums, `Class.forName`,
-or AOT-compiled classes with `require.invokeStatic` hit Crema limitations.
+when the relevant packages are preserved. Libraries using enums hit Crema bugs.
+Libraries using `Class.forName` fail due to GraalVM substitution inlining (see
+[Class.forName and GraalVM substitutions](#classforname-and-graalvm-substitutions));
+the Clojure fork compiler workaround should fix these for Clojure-emitted code.
 
 ### Performance
 
@@ -180,17 +192,24 @@ access to partially-initialized classes without deadlock.
 
 ### Preserve packages (for Crema runtime)
 
+Packages preserved via `-H:Preserve=package=X` in `build_native.clj`, based on
+babashka's `impl/classes.clj` coverage:
+
 - `clojure.lang` — Clojure's `creator` static field (functional interface support)
-- `java.lang.invoke` — method handle infrastructure (`DelegatingMethodHandle$Holder`)
-- `java.util.regex` — Clojure uses regexes heavily in core
-- `java.lang`, `java.util`, `java.io`, `java.util.concurrent` — standard library
-- `java.lang.reflect` — needed for proxy/reflection (e.g., pprint)
-- `java.net` — needed for `java.net.URL` constructor
-- `java.util.jar`, `java.util.zip` — needed for JarClassLoader
-- `javax.net.ssl` — needed for `SSLContext/getDefault` (http-kit, etc.)
-- `java.text` — needed for `SimpleDateFormat` constructor (tools.reader, etc.)
-- `java.time`, `java.time.format` — needed for `DateTimeFormatter/ISO_INSTANT`
-  (used by `clojure.instant`)
+- `java.lang`, `java.lang.invoke`, `java.lang.ref`, `java.lang.reflect` — core
+- `java.io`, `java.math`, `java.net`, `java.net.http` — I/O, math, networking
+- `java.nio`, `java.nio.channels`, `java.nio.charset`, `java.nio.file`,
+  `java.nio.file.attribute` — NIO
+- `java.security`, `java.security.cert`, `java.security.spec` — security
+- `java.sql` — JDBC
+- `java.text` — `SimpleDateFormat` constructor (tools.reader, etc.)
+- `java.time`, `java.time.chrono`, `java.time.format`, `java.time.temporal`,
+  `java.time.zone` — date/time
+- `java.util`, `java.util.concurrent`, `java.util.concurrent.atomic`,
+  `java.util.concurrent.locks`, `java.util.function`, `java.util.jar`,
+  `java.util.regex`, `java.util.stream`, `java.util.zip` — collections, concurrency
+- `javax.crypto`, `javax.crypto.spec`, `javax.net.ssl` — crypto/SSL
+- `javax.xml.namespace` — XML
 
 ### URL protocols
 
@@ -226,10 +245,8 @@ Custom classloader extending `DynamicClassLoader` for use in native images:
    `InterpreterResolvedObjectType.getDeclaredMethodsList()`. Affects libraries
    using Java enums (http-kit's `HttpMethod`, SnakeYaml's constructors).
 
-4. **`Class.forName(String)` not reachable** — Libraries that call
-   `Class.forName` at runtime (core.async, meander) crash because the method
-   wasn't compiled. Despite `java.lang` being preserved, specific methods on
-   `Class` may not be seen as reachable by analysis.
+4. **`Class.forName` not dispatchable by Crema** — See
+   [Class.forName and GraalVM substitutions](#classforname-and-graalvm-substitutions).
 
 5. **Binary requires `JAVA_HOME`** — Crema loads classes at runtime from the
    JDK's `lib/modules` (JRT filesystem). The binary is not fully standalone;
@@ -246,3 +263,53 @@ core fns like `use` aren't seen as reachable by native-image analysis.
 `repro.clj` (`clojure.pprint`, `clojure.walk`, `clojure.set`, `clojure.xml`,
 etc.). This means runtime `require` calls for these are no-ops — they're already
 loaded in the image.
+
+### `clojure.reflect.java__init` initialization ordering
+
+`clojure.reflect.clj` loads `reflect/java` via `(load "reflect/java")` from
+source, so the `clojure.reflect.java__init` class is never class-initialized
+during normal loading. When native-image analysis discovers it later (e.g., via
+reflection config), it tries to initialize it and fails because the
+`TypeReference` protocol from `clojure.reflect` isn't visible yet.
+
+**Solution**: `ClojureFeature.beforeAnalysis()` forces initialization in the
+correct order: first `clojure.lang.RT`, then `my.repro__init` (which loads all
+standard namespaces including `clojure.reflect`), then
+`clojure.reflect.java__init`.
+
+### Reflection config (`bb/gen_reflect_config.clj`)
+
+A babashka script generates `reflect-config.json` with ~470 classes based on
+babashka's `impl/classes.clj` coverage. All entries have `allPublicMethods`,
+`allPublicConstructors`, and `allPublicFields` set to true. Run with:
+
+```sh
+bb bb/gen_reflect_config.clj
+```
+
+### Class.forName and GraalVM substitutions
+
+`Class.forName(String)` and `Class.forName(String, boolean, ClassLoader)` are
+both internally substituted by GraalVM native-image. The substitution bodies are
+**inlined** at each call site during compilation — the original methods are never
+compiled as standalone entry points. When Crema's interpreter encounters
+`invokestatic java.lang.Class.forName(String)` in runtime-loaded bytecode, it
+looks up the AOT method table, finds the method metadata (preserved via
+`-H:Preserve=package=java.lang`), but there is no compiled code to dispatch to.
+
+Key observations:
+- Adding calls to `Class.forName` in application code does NOT help — the
+  analysis intrinsifies/inlines the substitution at each call site
+- Adding `Class.forName` to `reflect-config.json` does NOT help — reflection
+  registration is separate from method compilation
+- Creating a custom `@Substitute` for `Class.forName` conflicts with GraalVM's
+  internal substitution ("conflicts with previously registered")
+- `RT.classForName(String)` **does work** — it's a non-substituted Clojure
+  method that internally calls the 3-arg `Class.forName` (inlined by the
+  substitution at compile time)
+
+**Workaround**: The Clojure fork's `Compiler.java` redirects
+`(Class/forName ...)` interop calls to emit `invokestatic RT.classForName`
+instead of `invokestatic Class.forName`. This fixes all Clojure-emitted code
+(eval'd expressions and Clojure libraries). Java `.class` files that directly
+call `Class.forName` would still fail — this is a Crema limitation to report.
