@@ -1,5 +1,22 @@
 (ns my.repro
   (:gen-class)
+  (:require [clojure.data]
+            [clojure.edn]
+            [clojure.java.io]
+            [clojure.java.shell]
+            [clojure.main]
+            [clojure.math]
+            [clojure.pprint]
+            [clojure.reflect]
+            [clojure.repl]
+            [clojure.set]
+            [clojure.stacktrace]
+            [clojure.string]
+            [clojure.template]
+            [clojure.test]
+            [clojure.walk]
+            [clojure.xml]
+            [clojure.zip])
   (:import [my JarClassLoader]))
 
 (set! *warn-on-reflection* true)
@@ -18,12 +35,6 @@
       [cp args])))
 
 (defn -main [& args]
-  ;; Ensure core fns are seen as reachable by native-image analysis
-  ;; so they're available when loading libraries at runtime.
-  ;; The System/getProperty check prevents actual execution while
-  ;; keeping the calls in -main's reachable code paths.
-  (when (System/getProperty "CREMA_FORCE_REACHABLE")
-    (require 'clojure.core) (use 'clojure.core) (refer 'clojure.core) (load-file ""))
   (let [[cp-str remaining] (parse-args args)
         _ (when cp-str
             (let [paths (.split ^String cp-str ":")

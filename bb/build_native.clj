@@ -33,6 +33,8 @@
          "-H:Preserve=package=java.net"
          "-H:Preserve=package=java.util.jar"
          "-H:Preserve=package=java.util.zip"
+         "-H:Preserve=package=java.time"
+         "-H:Preserve=package=java.time.format"
          ;; "-H:Preserve=path=target/repro-1.0.0-standalone.jar"
          ;; "-H:-InterpreterTraceSupport"
          (str "-Djava.home=" (System/getenv "GRAALVM_HOME"))
