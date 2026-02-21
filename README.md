@@ -46,37 +46,13 @@ cd ~/dev/clojure && git checkout crema && mvn install -Dmaven.test.skip=true
   time) using `org.graalvm.nativeimage.imagecode` property check
 - Skip `doInit()` entirely at native-image runtime (user ns, refer, and server
   were all set up at build time and captured in the image)
-- `LOADER` var moved here from `Compiler` — breaks `RT` ↔ `Compiler` circular
-  class init (`baseLoader()` no longer triggers `Compiler.<clinit>`)
-- Added `pushNSandLoader()` (duplicated from `Compiler`) so generated
-  `__initLoad()` methods don't trigger `Compiler.<clinit>`
-- `RT.load()` explicitly calls `__initLoad()` on `__init` classes via reflection
-  after `loadClassForName()`, since `<clinit>` is now empty
+- Wrap `clojure.core.server` loading in `!nativeImageRuntime` guard (avoids
+  re-loading spec etc. at runtime)
 
 **`Var.java`**:
 - During native-image build-time class init (`imagecode=buildtime`), `set!` falls
   back to `bindRoot()` instead of throwing. Fixes "Can't change/establish root
   binding of: *warn-on-reflection* with set" for all namespaces.
-
-**`PersistentTreeMap.java`**:
-- Use `Util::compare` directly instead of `RT.DEFAULT_COMPARATOR` in no-arg
-  constructor. Breaks circular class init deadlock: `RT` ↔ `PersistentTreeMap`.
-
-**`MultiFn.java`**:
-- Use `Var.intern()` directly instead of `RT.var()` for static fields (`assoc`,
-  `dissoc`, `isa`, `parents`). Breaks circular class init: `RT` ↔ `MultiFn`.
-
-**`Compiler.java`**:
-- Forces `freshLoader=true` in `eval`
-- `LOADER` var now references `RT.LOADER` (moved to RT to break circular init)
-- Generated `__init` classes have empty `<clinit>` — all initialization moved to
-  `__initLoad()` method, called explicitly by `RT.load()`. This prevents circular
-  class init deadlocks when native-image initializes classes in parallel.
-- Generated `__initLoad()` calls `RT.pushNSandLoader` instead of
-  `Compiler.pushNSandLoader` to avoid triggering `Compiler.<clinit>`.
-
-**`core.clj`**:
-- Large diff (mostly reformatting/reordering)
 
 ## Building
 
