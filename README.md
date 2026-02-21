@@ -47,6 +47,12 @@ cd ~/dev/clojure && git checkout crema && mvn install -Dmaven.test.skip=true
 - Reset `doInit()` guard at runtime for `in-ns`/`refer` setup, but skip
   `clojure.core.server` require (already loaded at build time, avoids
   re-loading spec etc.)
+- `LOADER` var moved here from `Compiler` — breaks `RT` ↔ `Compiler` circular
+  class init (`baseLoader()` no longer triggers `Compiler.<clinit>`)
+- Added `pushNSandLoader()` (duplicated from `Compiler`) so generated
+  `__initLoad()` methods don't trigger `Compiler.<clinit>`
+- `RT.load()` explicitly calls `__initLoad()` on `__init` classes via reflection
+  after `loadClassForName()`, since `<clinit>` is now empty
 
 **`Var.java`**:
 - During native-image build-time class init (`imagecode=buildtime`), `set!` falls
@@ -63,6 +69,12 @@ cd ~/dev/clojure && git checkout crema && mvn install -Dmaven.test.skip=true
 
 **`Compiler.java`**:
 - Forces `freshLoader=true` in `eval`
+- `LOADER` var now references `RT.LOADER` (moved to RT to break circular init)
+- Generated `__init` classes have empty `<clinit>` — all initialization moved to
+  `__initLoad()` method, called explicitly by `RT.load()`. This prevents circular
+  class init deadlocks when native-image initializes classes in parallel.
+- Generated `__initLoad()` calls `RT.pushNSandLoader` instead of
+  `Compiler.pushNSandLoader` to avoid triggering `Compiler.<clinit>`.
 
 **`core.clj`**:
 - Large diff (mostly reformatting/reordering)
@@ -119,9 +131,19 @@ between `clojure.lang` classes and `RT`:
 3. **`RT` ↔ `__init` classes**: Native-image eagerly initializes `__init` classes
    (e.g. `clojure.core.protocols__init`, `clojure.edn__init`) on parallel threads,
    all waiting on `RT`, while `RT` waits on them to complete.
-   **Fix**: Force single-threaded class init with
-   `-J-Djava.util.concurrent.ForkJoinPool.common.parallelism=1` (build-time only,
-   does not affect the resulting binary). Slower builds but deterministic.
+   **Fix**: Make `__init` class `<clinit>` empty (no-op). Move all initialization
+   (constant init + namespace code loading) to a new `__initLoad()` method that
+   `RT.load()` calls explicitly after `loadClassForName()`. This way parallel
+   class init only triggers empty `<clinit>` methods — no deadlocks.
+
+4. **`RT` ↔ `Compiler`**: `RT.baseLoader()` accesses `Compiler.LOADER`, triggering
+   `Compiler.<clinit>`, which needs `RT.T`/`RT.map()`. If `Compiler` initializes
+   first on a different thread, the reentrant access sees `LOADER` as null (not
+   yet initialized).
+   **Fix**: Move `LOADER` var from `Compiler` to `RT`. `Compiler.LOADER` becomes
+   an alias for `RT.LOADER`. `baseLoader()` no longer triggers `Compiler.<clinit>`.
+   Also moved `pushNSandLoader()` to `RT` so generated `__initLoad()` bytecode
+   doesn't depend on `Compiler`.
 
 ### Preserve packages (for Crema runtime)
 
