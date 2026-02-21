@@ -32,13 +32,13 @@
 
 
 (defn- parse-args
-  "Parse -cp <paths> from args. Returns [cp-string remaining-args]."
+  "Parse -Scp <paths> from args. Returns [cp-string remaining-args]."
   [args]
   (loop [args args
          cp nil]
     (if (seq args)
       (let [[flag & rest-args] args]
-        (if (= "-cp" flag)
+        (if (= "-Scp" flag)
           (recur (rest rest-args) (first rest-args))
           [cp args]))
       [cp args])))
@@ -48,12 +48,8 @@
         _ (when cp-str
             (let [paths (.split ^String cp-str ":")
                   cl (JarClassLoader. paths (.getContextClassLoader (Thread/currentThread)))]
-              (.setContextClassLoader (Thread/currentThread) cl)
-))
-        expr (or (first remaining) "(assoc {} :foo :bar)")]
-    (binding [*ns* *ns*
-              *warn-on-reflection* *warn-on-reflection*
-              *data-readers* *data-readers*
-              *default-data-reader-fn* *default-data-reader-fn*
-              *repl* true]
-      (prn (clojure.lang.Compiler/eval (read-string expr))))))
+              (.setContextClassLoader (Thread/currentThread) cl)))
+        [flag & main-args] remaining]
+    (if (= "-M" flag)
+      (apply clojure.main/main main-args)
+      (apply clojure.main/main args))))

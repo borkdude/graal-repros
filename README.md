@@ -12,7 +12,7 @@ enable runtime `eval` in a native binary.
 **Working!** The native binary evaluates arbitrary Clojure expressions at runtime:
 
 ```
-$ JAVA_HOME=$HOME/Downloads/graalvm-25.1.0-dev+8.1/Contents/Home ./cream '(+ 1 2 3)'
+$ JAVA_HOME=$HOME/Downloads/graalvm-25.1.0-dev+8.1/Contents/Home ./cream -M -e '(+ 1 2 3)'
 6
 ```
 
@@ -73,19 +73,21 @@ The binary needs access to the JRT filesystem for runtime class loading.
 Set `JAVA_HOME` or pass `-Djava.home=...`:
 
 ```sh
-JAVA_HOME=$HOME/Downloads/graalvm-25.1.0-dev+8.1/Contents/Home ./cream '(+ 1 2 3)'
+JAVA_HOME=$HOME/Downloads/graalvm-25.1.0-dev+8.1/Contents/Home ./cream -M -e '(+ 1 2 3)'
 ```
 
-Without arguments, evaluates `(assoc {} :foo :bar)` as default.
+Delegates to `clojure.main`. The `-M` flag separates cream args from
+`clojure.main` args. Without `-M`, all args are passed to `clojure.main`
+directly.
 
-### Loading libraries at runtime (`-cp`)
+### Loading libraries at runtime (`-Scp`)
 
-The `-cp` flag adds JARs/directories to the classpath at runtime, enabling
+The `-Scp` flag adds JARs/directories to the classpath at runtime, enabling
 `require` of libraries not bundled in the native image:
 
 ```sh
-./cream -cp ~/.m2/repository/org/clojure/data.csv/1.1.0/data.csv-1.1.0.jar \
-  '(do (require (quote clojure.data.csv)) (let [sw (java.io.StringWriter.)] ((resolve (quote clojure.data.csv/write-csv)) sw [["a" "b"] ["1" "2"]]) (str sw)))'
+./cream -Scp ~/.m2/repository/org/clojure/data.csv/1.1.0/data.csv-1.1.0.jar \
+  -M -e '(do (require (quote clojure.data.csv)) (let [sw (java.io.StringWriter.)] ((resolve (quote clojure.data.csv/write-csv)) sw [["a" "b"] ["1" "2"]]) (str sw)))'
 ;; => "a,b\n1,2\n"
 ```
 
@@ -100,8 +102,8 @@ namespaces are required at build time in `repro.clj`. This means `require` at
 runtime is a no-op for these — no reachability issues.
 
 ```sh
-./cream -cp "$(clojure -Spath -Sdeps '{:deps {org.clojure/data.json {:mvn/version "RELEASE"}}}')" \
-  '(do (require (quote [clojure.data.json :as json])) (json/write-str {:a 1}))'
+./cream -Scp "$(clojure -Spath -Sdeps '{:deps {org.clojure/data.json {:mvn/version "RELEASE"}}}')" \
+  -M -e '(do (require (quote [clojure.data.json :as json])) (json/write-str {:a 1}))'
 ;; => "{\"a\":1}"
 ```
 
@@ -140,11 +142,11 @@ the Clojure fork compiler workaround should fix these for Clojure-emitted code.
 ### Performance
 
 ```
-$ time ./cream '(+ 1 2 3)'
+$ time ./cream -M -e '(+ 1 2 3)'
 6
   0.02s total
 
-$ time ./cream -cp <data.json jar> '(do (require ...) (json/write-str {:a 1}))'
+$ time ./cream -Scp <data.json jar> -M -e '(do (require ...) (json/write-str {:a 1}))'
 "{\"a\":1}"
   0.07s total
 ```
@@ -311,3 +313,60 @@ Key observations:
 instead of `invokestatic Class.forName`. This fixes all Clojure-emitted code
 (eval'd expressions and Clojure libraries). Java `.class` files that directly
 call `Class.forName` would still fail — this is a Crema limitation to report.
+
+## Cream vs Babashka
+
+Cream and [babashka](https://babashka.org) are both native Clojure binaries
+with fast startup, but they take fundamentally different approaches.
+
+### How they differ
+
+| | Cream | Babashka |
+|---|---|---|
+| **Clojure implementation** | Full JVM Clojure (1.13 fork) via Crema | SCI (Small Clojure Interpreter) — subset |
+| **Runtime eval** | Real `eval` — compiles bytecode, Crema JIT interprets/compiles | SCI interpreter — no bytecode, no JVM classes |
+| **Library loading** | Any Clojure/Java library from JARs at runtime | Built-in curated set; pods and babashka.deps for extras |
+| **Java interop** | Full — any preserved class, runtime class loading | Limited to classes compiled into the binary |
+| **Startup** | ~20ms | ~5ms |
+| **Binary size** | ~70MB (includes Crema runtime) | ~30MB |
+| **Standalone** | No — requires `JAVA_HOME` pointing to GraalVM | Yes — single binary, no dependencies |
+| **Compile time** | Slower — Crema adds overhead to native-image | Faster — no RuntimeClassLoading |
+| **Compile memory** | Higher — Crema preservation increases heap usage | Lower |
+| **Maturity** | Experimental (Crema is EA, custom Clojure fork) | Production-ready, large ecosystem |
+
+### Cream advantages
+
+- **Full Clojure**: No SCI limitations — macros, protocols, multimethods,
+  `deftype`, `defrecord`, `reify`, all work exactly as on the JVM
+- **Arbitrary library loading**: `require` any Clojure library at runtime from
+  JARs without pre-compilation or bundling
+- **Full Java interop**: Runtime class loading means libraries using Java
+  interop work (when packages are preserved)
+- **No interpreter overhead**: Crema interprets real JVM bytecode (with JIT
+  compilation), not an AST interpreter
+
+### Babashka advantages
+
+- **Production-ready**: Battle-tested, actively maintained, large community
+- **Truly standalone**: Single binary, no JAVA_HOME needed
+- **Rich ecosystem**: Built-in libraries (http-client, transit, yaml, etc.),
+  pods, tasks, nREPL
+- **Smaller binary**: ~30MB vs ~70MB
+- **Faster startup**: ~5ms vs ~20ms
+- **No fork required**: Works with stock GraalVM and stock Clojure
+- **Faster compilation**: No Crema/RuntimeClassLoading overhead during native-image build
+- **Lower build memory**: Preserving packages for Crema significantly increases heap usage
+- **No Crema bugs**: No enum issues, no Class.forName limitations
+
+### What Crema maturity could change
+
+If Crema becomes production-ready:
+
+- **No custom Clojure fork needed** — Crema bugs (enums, `getRawAnnotations`,
+  `Class.forName`) are the main reasons for the fork. Fixing these upstream
+  could allow stock Clojure to work.
+- **`JAVA_HOME` might become optional** — if Crema bundles JRT metadata in the
+  binary.
+- **Binary could compete on size** — Crema overhead may shrink as it matures.
+- **Full library compatibility** — enum fixes would unblock http-kit, cheshire,
+  clj-yaml, and any library using Java enums.
