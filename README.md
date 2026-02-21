@@ -98,6 +98,33 @@ runtime is a no-op for these — no reachability issues.
 ;; => "{\"a\":1}"
 ```
 
+### Library test results
+
+| Library | Status | Notes |
+|---------|--------|-------|
+| data.csv | Works | Pure Clojure, no transitive deps |
+| data.json | Works | Transitive deps (pprint, walk) loaded at build time |
+| medley | Works | Pure Clojure utility library |
+| camel-snake-kebab | Works | Pure Clojure |
+| hiccup | Works | Pure Clojure HTML generation |
+| tools.reader | Works | Fixed by preserving `java.math` package |
+| prismatic/schema | Works | Fixed by preserving `java.util.concurrent.atomic` |
+| tick | Works | Fixed by preserving `java.time.temporal`, `java.time.zone` |
+| clj-commons/fs | Works | File system utilities |
+| math.combinatorics | Works | Pure Clojure |
+| flatland/useful | Works | Pure Clojure |
+| data.xml | Fails | `Class.forName(String)` not reachable |
+| core.async | Fails | `Class.forName(String)` not reachable |
+| meander | Fails | `Class.forName(String)` not reachable |
+| specter | Fails | AOT-compiled, `require.invokeStatic` not reachable |
+| deep-diff2 | Fails | Protocol method resolution (`equality-partition`) |
+| http-kit | Fails | Enum `values()` NPE in Crema interpreter |
+| clj-yaml | Fails | Enum support (`EnumMap` NPE in Crema) |
+
+**Pattern**: Pure Clojure libraries work. Libraries using Java interop work
+when the relevant packages are preserved. Libraries using enums, `Class.forName`,
+or AOT-compiled classes with `require.invokeStatic` hit Crema limitations.
+
 ### Performance
 
 ```
@@ -160,6 +187,8 @@ access to partially-initialized classes without deadlock.
 - `java.lang.reflect` — needed for proxy/reflection (e.g., pprint)
 - `java.net` — needed for `java.net.URL` constructor
 - `java.util.jar`, `java.util.zip` — needed for JarClassLoader
+- `javax.net.ssl` — needed for `SSLContext/getDefault` (http-kit, etc.)
+- `java.text` — needed for `SimpleDateFormat` constructor (tools.reader, etc.)
 - `java.time`, `java.time.format` — needed for `DateTimeFormatter/ISO_INSTANT`
   (used by `clojure.instant`)
 
@@ -186,7 +215,23 @@ Custom classloader extending `DynamicClassLoader` for use in native images:
    `MethodHandleUtils.intUnbox` when `Reflector.canAccess()` calls
    `Method.canAccess(Object)` through a method handle. Crema bug to report.
 
-2. **Binary requires `JAVA_HOME`** — Crema loads classes at runtime from the
+2. **`getRawAnnotations` not implemented** — `Class.getRawAnnotations()` throws
+   `UnsupportedOperationException` for runtime-loaded classes in Crema. Affects
+   Clojure 1.13's `@FunctionalInterface` detection in the compiler. **Workaround**:
+   the Clojure fork catches `UnsupportedOperationException` in
+   `Compiler$FISupport.maybeFIMethod()` and treats it as "not a functional
+   interface".
+
+3. **Enum support broken** — `enum.values()` and `EnumMap` crash with NPE in
+   `InterpreterResolvedObjectType.getDeclaredMethodsList()`. Affects libraries
+   using Java enums (http-kit's `HttpMethod`, SnakeYaml's constructors).
+
+4. **`Class.forName(String)` not reachable** — Libraries that call
+   `Class.forName` at runtime (core.async, meander) crash because the method
+   wasn't compiled. Despite `java.lang` being preserved, specific methods on
+   `Class` may not be seen as reachable by analysis.
+
+5. **Binary requires `JAVA_HOME`** — Crema loads classes at runtime from the
    JDK's `lib/modules` (JRT filesystem). The binary is not fully standalone;
    it needs a GraalVM installation available. The `SystemImage.findHome()`
    substitution reads `JAVA_HOME` env var or `java.home` system property.
