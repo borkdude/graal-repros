@@ -12,7 +12,10 @@ public final class Target_jdk_internal_misc_VM {
 final class Target_jdk_internal_jrtfs_SystemImage {
     @Substitute
     static String findHome() {
-        // Workaround getProtectionDomain().getCodeSource() issue for boot classes
-        return System.getProperty("java.home");
+        String home = System.getenv("JAVA_HOME");
+        if (home == null) {
+            home = System.getProperty("java.home");
+        }
+        return home;
     }
 }

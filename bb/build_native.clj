@@ -11,6 +11,7 @@
          "-agentlib:native-image-agent=config-output-dir=." "-jar" "target/repro-1.0.0-standalone.jar")
 
 (p/shell (fs/file (System/getenv "GRAALVM_HOME") "bin" "native-image")
+         "-J-Djava.util.concurrent.ForkJoinPool.common.parallelism=1"
          "-jar" "target/repro-1.0.0-standalone.jar"
          "--initialize-at-run-time=com.sun.tools.javac.file.Locations,jdk.internal.jrtfs.SystemImage"
          "--initialize-at-build-time=clojure,com.sun.tools.doclint,com.sun.tools.javac.parser.Tokens$TokenKind,com.sun.tools.javac.parser.Tokens$Token$Tag"
@@ -29,7 +30,7 @@
          "-H:Preserve=package=java.util.concurrent"
          "-H:Preserve=package=java.util.regex"
          ;; "-H:Preserve=path=target/repro-1.0.0-standalone.jar"
-         "-H:-InterpreterTraceSupport"
+         ;; "-H:-InterpreterTraceSupport"
          (str "-Djava.home=" (System/getenv "GRAALVM_HOME"))
          "-H:+AllowJRTFileSystem"
          "-H:ConfigurationFileDirectories=."

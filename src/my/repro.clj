@@ -3,5 +3,6 @@
 
 (set! *warn-on-reflection* true)
 
-(defn -main [& _args]
-  (prn (clojure.lang.Compiler/eval '(assoc {} :foo :bar))))
+(defn -main [& args]
+  (let [expr (or (first args) "(assoc {} :foo :bar)")]
+    (prn (clojure.lang.Compiler/eval (read-string expr)))))
