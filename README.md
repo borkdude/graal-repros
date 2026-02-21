@@ -102,31 +102,15 @@ before the parallel analysis phase. This sequentially initializes all core
 namespaces, fn classes, and deftype classes. When analysis later discovers these
 classes, they're already initialized — no deadlocks.
 
-### Circular class init fixes (Clojure fork)
+### Why the Feature is sufficient
 
-Even with the Feature, some `clojure.lang` classes have circular dependencies
-with `RT` that surface during the sequential `RT.<clinit>` loading:
-
-1. **`RT` ↔ `PersistentTreeMap`**: `PersistentTreeMap.<clinit>` → calls
-   `this(RT.DEFAULT_COMPARATOR)` → waits on `RT`.
-   **Fix**: Use `Util::compare` directly.
-
-2. **`RT` ↔ `MultiFn`**: `MultiFn.<clinit>` calls `RT.var(...)` → needs
-   `RT.<clinit>`.
-   **Fix**: Use `Var.intern()` directly instead of `RT.var()`.
-
-3. **`RT` ↔ `__init` classes**: `__init` class `<clinit>` calls `RT.var()` (via
-   `__init0()`) and runs namespace code. When native-image initializes an `__init`
-   class on a different thread than `RT`, circular wait.
-   **Fix**: Make `__init` class `<clinit>` empty (no-op). Move all initialization
-   (constant init + namespace code loading) to a new `__initLoad()` method that
-   `RT.load()` calls explicitly after `loadClassForName()`.
-
-4. **`RT` ↔ `Compiler`**: `RT.baseLoader()` accesses `Compiler.LOADER`, triggering
-   `Compiler.<clinit>`, which needs `RT.T`/`RT.map()`.
-   **Fix**: Move `LOADER` var from `Compiler` to `RT`. `Compiler.LOADER` becomes
-   an alias for `RT.LOADER`. Also moved `pushNSandLoader()` to `RT` so generated
-   `__initLoad()` bytecode doesn't depend on `Compiler`.
+Earlier approaches required modifying `PersistentTreeMap`, `MultiFn`, `Compiler`,
+and `__init` class generation to break circular class init dependencies (e.g.,
+`RT` ↔ `PersistentTreeMap`, `RT` ↔ `MultiFn`, `RT` ↔ `__init` classes,
+`RT` ↔ `Compiler`). These were all **reverted** because the Feature makes them
+unnecessary: since `RT.<clinit>` runs to completion on a single thread before
+parallel analysis, Java's reentrant class initialization allows same-thread
+access to partially-initialized classes without deadlock.
 
 ### Preserve packages (for Crema runtime)
 
@@ -142,12 +126,7 @@ with `RT` that surface during the sequential `RT.<clinit>` loading:
    `MethodHandleUtils.intUnbox` when `Reflector.canAccess()` calls
    `Method.canAccess(Object)` through a method handle. Crema bug to report.
 
-2. **More circular deps may exist** — other `clojure.lang` classes may have
-   static fields referencing `RT`. If new cycles surface, the pattern is the same:
-   replace `RT.var()` with `Var.intern()`, replace `RT.DEFAULT_COMPARATOR` with
-   direct alternatives, etc.
-
-3. **Binary requires `JAVA_HOME`** — Crema loads classes at runtime from the
+2. **Binary requires `JAVA_HOME`** — Crema loads classes at runtime from the
    JDK's `lib/modules` (JRT filesystem). The binary is not fully standalone;
    it needs a GraalVM installation available. The `SystemImage.findHome()`
    substitution reads `JAVA_HOME` env var or `java.home` system property.
