@@ -87,11 +87,28 @@ extending `DynamicClassLoader` that reads JARs via `java.util.jar.JarFile`
 directly. This works around `URLClassLoader.findResource()` not functioning in
 GraalVM native images with Crema/RuntimeClassLoading.
 
-**Limitation**: Libraries whose transitive dependencies use `(:use ...)` in
-their `ns` form (e.g., `data.json` → `pprint` → `(:use clojure.walk)`) fail
-because `clojure.core/use`'s `invokeStatic` is not seen as reachable by
-native-image analysis. Simple libraries like `data.csv` work. See "Unsolved"
-below.
+Libraries with transitive Clojure standard library dependencies (e.g.,
+`data.json` → `pprint` → `clojure.walk`) work because all standard Clojure
+namespaces are required at build time in `repro.clj`. This means `require` at
+runtime is a no-op for these — no reachability issues.
+
+```sh
+./cream -cp "$(clojure -Spath -Sdeps '{:deps {org.clojure/data.json {:mvn/version "RELEASE"}}}')" \
+  '(do (require (quote [clojure.data.json :as json])) (json/write-str {:a 1}))'
+;; => "{\"a\":1}"
+```
+
+### Performance
+
+```
+$ time ./cream '(+ 1 2 3)'
+6
+  0.02s total
+
+$ time ./cream -cp <data.json jar> '(do (require ...) (json/write-str {:a 1}))'
+"{\"a\":1}"
+  0.07s total
+```
 
 ## Key findings
 
@@ -143,6 +160,8 @@ access to partially-initialized classes without deadlock.
 - `java.lang.reflect` — needed for proxy/reflection (e.g., pprint)
 - `java.net` — needed for `java.net.URL` constructor
 - `java.util.jar`, `java.util.zip` — needed for JarClassLoader
+- `java.time`, `java.time.format` — needed for `DateTimeFormatter/ISO_INSTANT`
+  (used by `clojure.instant`)
 
 ### URL protocols
 
@@ -172,28 +191,13 @@ Custom classloader extending `DynamicClassLoader` for use in native images:
    it needs a GraalVM installation available. The `SystemImage.findHome()`
    substitution reads `JAVA_HOME` env var or `java.home` system property.
 
-### Unsolved: core fn reachability for runtime-loaded code
+### Build-time namespace loading
 
-When a runtime-loaded library's `ns` form uses `(:use ...)`, the Crema
-interpreter dispatches to `clojure.core$use.invokeStatic()`, which was not
-compiled because native-image analysis didn't see it as reachable.
+Runtime-loaded libraries that transitively depend on Clojure standard library
+namespaces (e.g., `data.json` → `pprint` → `clojure.walk`) would fail because
+core fns like `use` aren't seen as reachable by native-image analysis.
 
-**What works**: `data.csv` loads fine (only uses `require`, no `use`).
-
-**What fails**: `data.json` → requires `pprint` → `(:use clojure.walk)` →
-crashes with "not compiled because it was not seen as reachable by analysis".
-
-**Attempted approaches**:
-- `(def ^:private _reachable [use refer load-file])` — holds Var references but
-  doesn't make `invokeStatic` reachable (analysis only sees `IFn` stored)
-- `(when (System/getProperty "X") (use ...) (refer ...))` in `-main` — Clojure
-  dispatches through `Var.invoke()`, not direct static calls, so analysis can't
-  trace to specific `invokeStatic` methods
-- `-H:Preserve=package=clojure` — makes all clojure classes available to the
-  interpreter but breaks method dispatch for `Symbol.intern` etc.
-
-**Possible directions**:
-- Targeted `Preserve=class=clojure.core$use` (preserve specific fn classes)
-- GraalVM reachability-metadata JSON config for specific methods
-- Ask GraalVM team about the intended mechanism for declaring methods reachable
-  for the Crema interpreter
+**Solution**: Require all standard Clojure namespaces at build time in
+`repro.clj` (`clojure.pprint`, `clojure.walk`, `clojure.set`, `clojure.xml`,
+etc.). This means runtime `require` calls for these are no-ops — they're already
+loaded in the image.
