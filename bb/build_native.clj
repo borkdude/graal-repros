@@ -10,7 +10,8 @@
 #_(p/shell (fs/file (System/getenv "GRAALVM_HOME") "bin" "java")
          "-agentlib:native-image-agent=config-output-dir=." "-jar" "target/repro-1.0.0-standalone.jar")
 
-(p/shell (fs/file (System/getenv "GRAALVM_HOME") "bin" "native-image")
+(p/shell (str (fs/file (System/getenv "GRAALVM_HOME") "bin"
+                       (if (fs/windows?) "native-image.cmd" "native-image")))
          ;; "-J-Djava.util.concurrent.ForkJoinPool.common.parallelism=1"
          "-jar" "target/repro-1.0.0-standalone.jar"
          "--initialize-at-run-time=com.sun.tools.javac.file.Locations,jdk.internal.jrtfs.SystemImage"
