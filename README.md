@@ -71,6 +71,28 @@ JAVA_HOME=$HOME/Downloads/graalvm-25.1.0-dev+8.1/Contents/Home ./cream '(+ 1 2 3
 
 Without arguments, evaluates `(assoc {} :foo :bar)` as default.
 
+### Loading libraries at runtime (`-cp`)
+
+The `-cp` flag adds JARs/directories to the classpath at runtime, enabling
+`require` of libraries not bundled in the native image:
+
+```sh
+./cream -cp ~/.m2/repository/org/clojure/data.csv/1.1.0/data.csv-1.1.0.jar \
+  '(do (require (quote clojure.data.csv)) (let [sw (java.io.StringWriter.)] ((resolve (quote clojure.data.csv/write-csv)) sw [["a" "b"] ["1" "2"]]) (str sw)))'
+;; => "a,b\n1,2\n"
+```
+
+Uses `JarClassLoader` (`src-java/my/JarClassLoader.java`), a custom classloader
+extending `DynamicClassLoader` that reads JARs via `java.util.jar.JarFile`
+directly. This works around `URLClassLoader.findResource()` not functioning in
+GraalVM native images with Crema/RuntimeClassLoading.
+
+**Limitation**: Libraries whose transitive dependencies use `(:use ...)` in
+their `ns` form (e.g., `data.json` → `pprint` → `(:use clojure.walk)`) fail
+because `clojure.core/use`'s `invokeStatic` is not seen as reachable by
+native-image analysis. Simple libraries like `data.csv` work. See "Unsolved"
+below.
+
 ## Key findings
 
 ### Substitutions (`src-java/Target_jdk_internal_misc_VM.java`)
@@ -118,6 +140,25 @@ access to partially-initialized classes without deadlock.
 - `java.lang.invoke` — method handle infrastructure (`DelegatingMethodHandle$Holder`)
 - `java.util.regex` — Clojure uses regexes heavily in core
 - `java.lang`, `java.util`, `java.io`, `java.util.concurrent` — standard library
+- `java.lang.reflect` — needed for proxy/reflection (e.g., pprint)
+- `java.net` — needed for `java.net.URL` constructor
+- `java.util.jar`, `java.util.zip` — needed for JarClassLoader
+
+### URL protocols
+
+`--enable-url-protocols=http,https,jar,unix` — the `jar:` protocol is required
+for `JarClassLoader.getResource()` to construct `jar:file:...!/...` URLs in
+native image. Without it, `new URL("jar:...")` throws `MalformedURLException`.
+
+### JarClassLoader (`src-java/my/JarClassLoader.java`)
+
+Custom classloader extending `DynamicClassLoader` for use in native images:
+- Indexes all JAR entries at construction for O(1) resource lookup
+- `getResourceAsStream()` — reads from JARs via `JarFile.getInputStream()`
+- `getResource()` — returns `jar:file:` URLs
+- `findClass()` — reads `.class` bytes from JARs and calls `defineClass()`
+- Supports both JAR files and directories on the classpath
+- Falls back to parent classloader for resources not found locally
 
 ### Known issues
 
@@ -130,3 +171,29 @@ access to partially-initialized classes without deadlock.
    JDK's `lib/modules` (JRT filesystem). The binary is not fully standalone;
    it needs a GraalVM installation available. The `SystemImage.findHome()`
    substitution reads `JAVA_HOME` env var or `java.home` system property.
+
+### Unsolved: core fn reachability for runtime-loaded code
+
+When a runtime-loaded library's `ns` form uses `(:use ...)`, the Crema
+interpreter dispatches to `clojure.core$use.invokeStatic()`, which was not
+compiled because native-image analysis didn't see it as reachable.
+
+**What works**: `data.csv` loads fine (only uses `require`, no `use`).
+
+**What fails**: `data.json` → requires `pprint` → `(:use clojure.walk)` →
+crashes with "not compiled because it was not seen as reachable by analysis".
+
+**Attempted approaches**:
+- `(def ^:private _reachable [use refer load-file])` — holds Var references but
+  doesn't make `invokeStatic` reachable (analysis only sees `IFn` stored)
+- `(when (System/getProperty "X") (use ...) (refer ...))` in `-main` — Clojure
+  dispatches through `Var.invoke()`, not direct static calls, so analysis can't
+  trace to specific `invokeStatic` methods
+- `-H:Preserve=package=clojure` — makes all clojure classes available to the
+  interpreter but breaks method dispatch for `Symbol.intern` etc.
+
+**Possible directions**:
+- Targeted `Preserve=class=clojure.core$use` (preserve specific fn classes)
+- GraalVM reachability-metadata JSON config for specific methods
+- Ask GraalVM team about the intended mechanism for declaring methods reachable
+  for the Crema interpreter
