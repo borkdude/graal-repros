@@ -17,3 +17,9 @@
   (prn "one"))
 
 (foo {:foo 1})
+
+(require '[clojure.spec.alpha :as s])
+
+(s/def ::foo int?)
+
+(prn (s/valid? ::foo 1))

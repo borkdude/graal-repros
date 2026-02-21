@@ -44,9 +44,8 @@ cd ~/dev/clojure && git checkout crema && mvn install -Dmaven.test.skip=true
 **`RT.java`**:
 - Skip loading `clojure/core` at native-image runtime (already loaded at build
   time) using `org.graalvm.nativeimage.imagecode` property check
-- Reset `doInit()` guard at runtime for `in-ns`/`refer` setup, but skip
-  `clojure.core.server` require (already loaded at build time, avoids
-  re-loading spec etc.)
+- Skip `doInit()` entirely at native-image runtime (user ns, refer, and server
+  were all set up at build time and captured in the image)
 - `LOADER` var moved here from `Compiler` — breaks `RT` ↔ `Compiler` circular
   class init (`baseLoader()` no longer triggers `Compiler.<clinit>`)
 - Added `pushNSandLoader()` (duplicated from `Compiler`) so generated
@@ -114,36 +113,44 @@ Without arguments, evaluates `(assoc {} :foo :bar)` as default.
 - `jdk.internal.jrtfs.SystemImage` must be in `--initialize-at-run-time`,
   otherwise the analysis phase deadlocks.
 
-### Circular class init deadlocks
+### Deterministic class initialization (`ClojureFeature`)
 
-Native-image initializes classes in parallel, which exposes circular dependencies
-between `clojure.lang` classes and `RT`:
+Native-image with `--initialize-at-build-time=clojure` eagerly initializes ALL
+`clojure.*` classes in parallel during analysis. This causes circular class init
+deadlocks because compiled Clojure classes (fn, deftype, `__init`) reference `RT`
+in their `<clinit>`, while `RT.<clinit>` loads core which needs those classes.
 
-1. **`RT` ↔ `PersistentTreeMap`**: `RT.<clinit>` loads core → needs
-   `PersistentTreeSet` → needs `PersistentTreeMap.<clinit>` → calls
+**Solution**: A GraalVM `Feature` (`src-java/ClojureFeature.java`) forces
+`RT.<clinit>` to complete in `beforeAnalysis()`, which runs on a single thread
+before the parallel analysis phase. This sequentially initializes all core
+namespaces, fn classes, and deftype classes. When analysis later discovers these
+classes, they're already initialized — no deadlocks.
+
+### Circular class init fixes (Clojure fork)
+
+Even with the Feature, some `clojure.lang` classes have circular dependencies
+with `RT` that surface during the sequential `RT.<clinit>` loading:
+
+1. **`RT` ↔ `PersistentTreeMap`**: `PersistentTreeMap.<clinit>` → calls
    `this(RT.DEFAULT_COMPARATOR)` → waits on `RT`.
    **Fix**: Use `Util::compare` directly.
 
 2. **`RT` ↔ `MultiFn`**: `MultiFn.<clinit>` calls `RT.var(...)` → needs
-   `RT.<clinit>` → loads core → uses `MultiFn` → waits on `MultiFn`.
+   `RT.<clinit>`.
    **Fix**: Use `Var.intern()` directly instead of `RT.var()`.
 
-3. **`RT` ↔ `__init` classes**: Native-image eagerly initializes `__init` classes
-   (e.g. `clojure.core.protocols__init`, `clojure.edn__init`) on parallel threads,
-   all waiting on `RT`, while `RT` waits on them to complete.
+3. **`RT` ↔ `__init` classes**: `__init` class `<clinit>` calls `RT.var()` (via
+   `__init0()`) and runs namespace code. When native-image initializes an `__init`
+   class on a different thread than `RT`, circular wait.
    **Fix**: Make `__init` class `<clinit>` empty (no-op). Move all initialization
    (constant init + namespace code loading) to a new `__initLoad()` method that
-   `RT.load()` calls explicitly after `loadClassForName()`. This way parallel
-   class init only triggers empty `<clinit>` methods — no deadlocks.
+   `RT.load()` calls explicitly after `loadClassForName()`.
 
 4. **`RT` ↔ `Compiler`**: `RT.baseLoader()` accesses `Compiler.LOADER`, triggering
-   `Compiler.<clinit>`, which needs `RT.T`/`RT.map()`. If `Compiler` initializes
-   first on a different thread, the reentrant access sees `LOADER` as null (not
-   yet initialized).
+   `Compiler.<clinit>`, which needs `RT.T`/`RT.map()`.
    **Fix**: Move `LOADER` var from `Compiler` to `RT`. `Compiler.LOADER` becomes
-   an alias for `RT.LOADER`. `baseLoader()` no longer triggers `Compiler.<clinit>`.
-   Also moved `pushNSandLoader()` to `RT` so generated `__initLoad()` bytecode
-   doesn't depend on `Compiler`.
+   an alias for `RT.LOADER`. Also moved `pushNSandLoader()` to `RT` so generated
+   `__initLoad()` bytecode doesn't depend on `Compiler`.
 
 ### Preserve packages (for Crema runtime)
 
