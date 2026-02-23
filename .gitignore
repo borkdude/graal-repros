@@ -1,2 +1,4 @@
 repro
 target
+*.class
+/main
