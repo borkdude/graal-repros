@@ -17,7 +17,7 @@ JAVA_HOME=/path/to/graalvm-ea bash build.sh
 ## Run
 
 ```sh
-./main
+JAVA_HOME=/path/to/graalvm-ea ./main
 ```
 
 Expected output: `Class: java.util.ArrayList`

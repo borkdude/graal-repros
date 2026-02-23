@@ -18,6 +18,7 @@ $JAVA_HOME/bin/native-image \
   -H:Preserve=package=java.net \
   -H:Preserve=package=java.io \
   -H:ConfigurationFileDirectories=. \
+  -H:+AllowJRTFileSystem \
   -o main \
   Main
 
